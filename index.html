@@ -24,44 +24,44 @@
                     <div class="stats-row">
                         <div class="stat-item">
                             <div class="stat-label">Placed</div>
-                            <div class="stat-value success">0</div>
+                            <div class="stat-value success" id="placed-count">0</div>
                         </div>
                         <div class="stat-item">
                             <div class="stat-label">Ignored</div>
-                            <div class="stat-value muted">0</div>
+                            <div class="stat-value muted" id="ignored-count">0</div>
                         </div>
                         <div class="stat-item">
                             <div class="stat-label">Remaining</div>
-                            <div class="stat-value primary">0</div>
+                            <div class="stat-value primary" id="remaining-count">0</div>
                         </div>
                         <div class="stat-item">
                             <div class="stat-label">Risk Distribution</div>
                             <div class="risk-distribution">
                                 <div class="risk-dot-item" data-risk="low">
                                     <div class="risk-dot"></div>
-                                    <span class="risk-count">0</span>
+                                    <span class="risk-count" id="risk-low-dot">0</span>
                                 </div>
                                 <div class="risk-dot-item" data-risk="medium">
                                     <div class="risk-dot"></div>
-                                    <span class="risk-count">0</span>
+                                    <span class="risk-count" id="risk-medium-dot">0</span>
                                 </div>
                                 <div class="risk-dot-item" data-risk="high">
                                     <div class="risk-dot"></div>
-                                    <span class="risk-count">0</span>
+                                    <span class="risk-count" id="risk-high-dot">0</span>
                                 </div>
                             </div>
                         </div>
                         <div class="stat-item align-right">
                             <div class="stat-label">Total Progress</div>
-                            <div class="stat-value">0%</div>
+                            <div class="stat-value" id="total-progress">0%</div>
                         </div>
                     </div>
                     
                     <!-- Progress Bar -->
                     <div class="progress-container">
-                        <div class="progress-bar placed-progress" style="width: 0%"></div>
-                        <div class="progress-bar ignored-progress" style="width: 0%"></div>
-                        <div class="progress-label">
+                        <div class="progress-bar placed-progress" id="placed-progress" style="width: 0%"></div>
+                        <div class="progress-bar ignored-progress" id="ignored-progress" style="width: 0%"></div>
+                        <div class="progress-label" id="progress-label">
                             <span>0 placed • 0 ignored • 0 remaining</span>
                         </div>
                     </div>
@@ -224,7 +224,7 @@
 
         <!-- Modal -->
         <div id="modal" class="modal" style="display: none;">
-            <div class="modal-overlay"></div>
+            <div class="modal-overlay" id="modal-overlay"></div>
             <div class="modal-content">
                 <div class="modal-header">
                     <div>
