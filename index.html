@@ -1,18 +1,287 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-   <link rel="icon" type="image/png" href="/ml-api/logo.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  
-    <title>Prometheus</title>
-    <script type="module" crossorigin src="/ml-api/assets/index-CEUsQlGR.js"></script>
-    <link rel="stylesheet" crossorigin href="/ml-api/assets/index-B8qTLNBT.css">
-  </head>
-  <body>
-    <div id="root"></div>
-  </body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slip Placement Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.2/axios.min.js"></script>
+</head>
+<body>
+    <main class="container">
+        <!-- Header Section -->
+        <div class="header-section fade-in">
+            <div class="header-title">
+                <i class="fas fa-tachometer-alt header-icon"></i>
+                <h1>Slip Placement Dashboard</h1>
+            </div>
+            <p class="header-subtitle">Top Ranked Slips (by Confidence & Coverage)</p>
+            
+            <!-- Stats Card -->
+            <section class="card stats-card">
+                <div class="card-content">
+                    <div class="stats-row">
+                        <div class="stat-item">
+                            <div class="stat-label">Placed</div>
+                            <div class="stat-value success">0</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Ignored</div>
+                            <div class="stat-value muted">0</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Remaining</div>
+                            <div class="stat-value primary">0</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Risk Distribution</div>
+                            <div class="risk-distribution">
+                                <div class="risk-dot-item" data-risk="low">
+                                    <div class="risk-dot"></div>
+                                    <span class="risk-count">0</span>
+                                </div>
+                                <div class="risk-dot-item" data-risk="medium">
+                                    <div class="risk-dot"></div>
+                                    <span class="risk-count">0</span>
+                                </div>
+                                <div class="risk-dot-item" data-risk="high">
+                                    <div class="risk-dot"></div>
+                                    <span class="risk-count">0</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="stat-item align-right">
+                            <div class="stat-label">Total Progress</div>
+                            <div class="stat-value">0%</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Progress Bar -->
+                    <div class="progress-container">
+                        <div class="progress-bar placed-progress" style="width: 0%"></div>
+                        <div class="progress-bar ignored-progress" style="width: 0%"></div>
+                        <div class="progress-label">
+                            <span>0 placed • 0 ignored • 0 remaining</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Filters Card -->
+        <section class="card filters-card">
+            <div class="card-content">
+                <div class="filters-header">
+                    <h3>Filters & Search</h3>
+                    <button id="clear-all-filters" class="clear-filters-btn" disabled>Clear All Filters</button>
+                </div>
+                
+                <div class="filters-content">
+                    <!-- Search -->
+                    <div class="search-container">
+                        <div class="search-input-wrapper">
+                            <i class="fas fa-search search-icon"></i>
+                            <input 
+                                type="text" 
+                                id="search-input" 
+                                class="search-input" 
+                                placeholder="Search by slip ID or team name..."
+                            >
+                            <button id="clear-search" class="clear-search-btn" style="display: none;">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div id="search-helper" class="search-helper"></div>
+                    </div>
+                    
+                    <!-- Sort and Page Size -->
+                    <div class="controls-row">
+                        <div class="form-control">
+                            <label for="sort-select">Sort By</label>
+                            <select id="sort-select" class="select-input">
+                                <option value="confidence">Confidence</option>
+                                <option value="odds">Odds</option>
+                                <option value="stake">Stake</option>
+                                <option value="risk">Risk Level</option>
+                                <option value="return">Return</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-control">
+                            <label for="page-size-select">Items Per Page</label>
+                            <select id="page-size-select" class="select-input">
+                                <option value="5">5</option>
+                                <option value="10" selected>10</option>
+                                <option value="20">20</option>
+                                <option value="50">50</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Risk Filter -->
+                    <div class="risk-filter-section">
+                        <div class="risk-filter-header">
+                            <span class="section-title">Filter by Risk Level</span>
+                            <span id="risk-count" class="risk-count-text">(All risks)</span>
+                        </div>
+                        <div class="toggle-button-group" id="risk-toggle-group">
+                            <button class="toggle-btn active" data-value="all">All Risks (<span class="risk-total">0</span>)</button>
+                            <button class="toggle-btn" data-value="low">
+                                <span class="chip risk-chip low">Low Risk</span>(<span class="risk-low-count">0</span>)
+                            </button>
+                            <button class="toggle-btn" data-value="medium">
+                                <span class="chip risk-chip medium">Medium Risk</span>(<span class="risk-medium-count">0</span>)
+                            </button>
+                            <button class="toggle-btn" data-value="high">
+                                <span class="chip risk-chip high">High Risk</span>(<span class="risk-high-count">0</span>)
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Stake Distribution -->
+                    <div class="stake-distribution-section">
+                        <h4 class="section-title">Manual Stake Distribution</h4>
+                        <div class="stake-controls">
+                            <div class="form-control">
+                                <label for="bankroll-input">Total Bankroll</label>
+                                <input 
+                                    type="text" 
+                                    id="bankroll-input" 
+                                    class="text-input" 
+                                    placeholder="e.g., 40.00"
+                                    inputmode="decimal"
+                                >
+                                <div id="bankroll-helper" class="helper-text">Select a specific risk filter first</div>
+                            </div>
+                            
+                            <button id="distribute-stake-btn" class="btn btn-primary" disabled>Distribute Stake</button>
+                            
+                            <button id="clear-overrides-btn" class="btn btn-outline-error" style="display: none;">
+                                Clear Overrides
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Loading State -->
+        <div id="loading-state" class="loading-container">
+            <div class="spinner"></div>
+            <p class="loading-text">Loading slips...</p>
+        </div>
+
+        <!-- Error State -->
+        <div id="error-state" class="error-container" style="display: none;">
+            <div class="error-content">
+                <i class="fas fa-exclamation-circle error-icon"></i>
+                <h3 class="error-title">Error</h3>
+                <p id="error-message" class="error-message"></p>
+            </div>
+        </div>
+
+        <!-- No Results State -->
+        <div id="no-results-state" class="no-results-container" style="display: none;">
+            <div class="no-results-content">
+                <p class="no-results-text">No slips found matching your criteria</p>
+                <button id="clear-filters-btn" class="btn btn-outline">Clear All Filters</button>
+            </div>
+        </div>
+
+        <!-- Slips Table -->
+        <div id="table-container" class="table-container fade-in" style="display: none;">
+            <table class="slips-table">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Slip ID</th>
+                        <th>Risk Level</th>
+                        <th>Confidence</th>
+                        <th>Matches</th>
+                        <th>Stake</th>
+                        <th>Potential Return</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body">
+                    <!-- Slips will be inserted here -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <div id="pagination-container" class="pagination-container" style="display: none;">
+            <div class="pagination-info">
+                Showing slips <span id="showing-start">0</span> to <span id="showing-end">0</span> of 
+                <span id="total-filtered">0</span>
+                <span id="filtered-info" style="display: none;"> (filtered from <span id="total-all">0</span> total)</span>
+            </div>
+            <div class="pagination" id="pagination">
+                <!-- Pagination buttons will be inserted here -->
+            </div>
+        </div>
+
+        <!-- Modal -->
+        <div id="modal" class="modal" style="display: none;">
+            <div class="modal-overlay"></div>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div>
+                        <h3 class="modal-title">Viewing Slip: <span id="modal-slip-id"></span></h3>
+                        <div class="modal-chips">
+                            <span id="modal-risk-chip" class="chip"></span>
+                            <span id="modal-confidence-chip" class="chip confidence-chip"></span>
+                        </div>
+                    </div>
+                    <button id="close-modal" class="modal-close-btn">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <h4 class="modal-section-title">Match Selections (<span id="modal-legs-count">0</span>)</h4>
+                <div class="modal-table-container">
+                    <table class="modal-table">
+                        <thead>
+                            <tr>
+                                <th>Match</th>
+                                <th>Market</th>
+                                <th>Selection</th>
+                                <th>Odds</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modal-legs-body">
+                            <!-- Legs will be inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="modal-summary">
+                    <div class="summary-item">
+                        <div class="summary-label">Stake</div>
+                        <div class="summary-value" id="modal-stake">€0.00</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Total Odds</div>
+                        <div class="summary-value" id="modal-odds">0.00</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Potential Return</div>
+                        <div class="summary-value success" id="modal-return">€0.00</div>
+                    </div>
+                </div>
+                
+                <div class="modal-actions">
+                    <button id="modal-place-btn" class="btn btn-success">Mark as Placed</button>
+                    <button id="modal-close-btn" class="btn btn-outline">Close</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tooltip Container -->
+        <div id="tooltip" class="tooltip"></div>
+    </main>
+
+    <script src="app.js"></script>
+</body>
 </html>
