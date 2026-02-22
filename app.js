@@ -333,12 +333,12 @@ function setRiskFilter(filter) {
     });
     
     // Update helper text
-    if (filter === 'all') {
-        elements.bankrollHelper.textContent = 'Select a specific risk filter first';
-    } else {
-        const count = state.filteredSlips.length;
-        elements.bankrollHelper.textContent = `Will distribute across ${count} slip${count !== 1 ? 's' : ''}`;
-    }
+    // if (filter === 'all') {
+    //     elements.bankrollHelper.textContent = 'Select a specific risk filter first';
+    // } else {
+    //     const count = state.filteredSlips.length;
+    //     elements.bankrollHelper.textContent = `Will distribute across ${count} slip${count !== 1 ? 's' : ''}`;
+    // }
     
     processAndRender();
 }
@@ -366,10 +366,8 @@ function setItemsPerPage(count) {
 function setTotalBankroll(value) {
     state.totalBankroll = value;
     elements.bankrollInput.value = value;
-    
-    // Update button state
-    const canRedistribute = Number(value) > 0 && state.filteredSlips.length > 0;
-    elements.distributeStakeBtn.disabled = !canRedistribute;
+
+    renderDistributeButton();
 }
 
 // Render Functions
@@ -511,6 +509,27 @@ function renderTable() {
         
         elements.tableBody.appendChild(row);
     });
+}
+
+function renderDistributeButton() {
+    const hasFilteredSlips = state.filteredSlips.length > 0;
+    const hasBankroll = state.totalBankroll && Number(state.totalBankroll) > 0;
+
+    const canDistribute = hasFilteredSlips && hasBankroll;
+
+    elements.distributeStakeBtn.disabled = !canDistribute;
+
+    // Update helper text with clear feedback
+    if (!hasFilteredSlips) {
+        elements.bankrollHelper.textContent = 'No slips available to distribute across';
+        elements.bankrollHelper.style.color = 'var(--accent-error)';
+    } else if (!hasBankroll) {
+        elements.bankrollHelper.textContent = `Enter bankroll to distribute across ${state.filteredSlips.length} slip${state.filteredSlips.length !== 1 ? 's' : ''}`;
+        elements.bankrollHelper.style.color = 'var(--text-tertiary)';
+    } else {
+        elements.bankrollHelper.textContent = `Ready to distribute €${state.totalBankroll} across ${state.filteredSlips.length} slip${state.filteredSlips.length !== 1 ? 's' : ''}`;
+        elements.bankrollHelper.style.color = 'var(--accent-success)';
+    }
 }
 
 function renderPagination() {
@@ -674,11 +693,12 @@ function processAndRender() {
     
     renderClearFiltersButton();
     renderOverridesButton();
+    renderDistributeButton();
 }
 
 // Event Handlers
 function handleDistributeStake() {
-    if (state.riskFilter === 'all' || !state.totalBankroll) return;
+    if (!state.totalBankroll) return;
     
     const bankroll = Number(state.totalBankroll);
     if (isNaN(bankroll) || bankroll <= 0) return;
